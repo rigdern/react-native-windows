@@ -1,6 +1,8 @@
 ﻿using ReactNative.Bridge;
+using ReactNative.Views.Image;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -24,6 +26,16 @@ namespace ReactNative.Modules.Image
 
         public IImageReference Get(string uri)
         {
+            return Get(new ReactImageRequest
+            {
+                Source = uri
+            });
+        }
+
+        public IImageReference Get(ReactImageRequest imageRequest)
+        {
+            var uri = imageRequest.Source;
+            var headers = imageRequest.Headers;
             var reference = default(ImageReference);
             lock (_cache)
             {
@@ -39,7 +51,7 @@ namespace ReactNative.Modules.Image
                 {
                     if (!_cache.TryGetValue(uri, out reference))
                     {
-                        reference = new ImageReference(uri, this);
+                        reference = new ImageReference(imageRequest, this);
                         _cache.Add(uri, reference);
                     }
                     else
@@ -60,15 +72,21 @@ namespace ReactNative.Modules.Image
             private IDisposable _subscription;
             private int _refCount = 1;
 
-            public ImageReference(string uri, RefCountImageCache parent)
+            public ImageReference(ReactImageRequest imageRequest, RefCountImageCache parent)
             {
-                Uri = uri;
+                Uri = imageRequest.Source;
+                Headers = imageRequest.Headers;
                 _parent = parent;
                 _subject = new ReplaySubject<Unit>(1);
                 InitializeImage();
             }
 
             public string Uri
+            {
+                get;
+            }
+
+            public IDictionary<string, string> Headers
             {
                 get;
             }
@@ -127,7 +145,7 @@ namespace ReactNative.Modules.Image
 
             private async void InitializeImage()
             {
-                var stream = await _parent._uriLoader.OpenReadAsync(Uri);
+                var stream = await _parent._uriLoader.OpenReadAsync(Uri, Headers);
                 DispatcherHelpers.RunOnDispatcher(async () =>
                 {
                     Image = new BitmapImage();

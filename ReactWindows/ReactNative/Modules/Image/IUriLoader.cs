@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
 namespace ReactNative.Modules.Image
@@ -21,5 +22,13 @@ namespace ReactNative.Modules.Image
         /// <param name="uri">The URI.</param>
         /// <returns>A task to await the stream.</returns>
         Task<IRandomAccessStreamWithContentType> OpenReadAsync(string uri);
+
+        /// <summary>
+        /// Open a stream to read from a URI.
+        /// </summary>
+        /// <param name="uri">The URI.</param>
+        /// <param name="headers">The HTTP headers.</param>
+        /// <returns>A task to await the stream.</returns>
+        Task<IRandomAccessStream> OpenReadAsync(string uri, IDictionary<string, string> headers);
     }
 }

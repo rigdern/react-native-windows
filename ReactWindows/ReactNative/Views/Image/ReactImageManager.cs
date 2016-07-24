@@ -1,4 +1,5 @@
-﻿using ReactNative.Modules.Image;
+﻿using Newtonsoft.Json.Linq;
+using ReactNative.Modules.Image;
 using ReactNative.UIManager;
 using ReactNative.UIManager.Annotations;
 using System;
@@ -21,6 +22,9 @@ namespace ReactNative.Views.Image
             new Dictionary<Border, SerialDisposable>();
 
         private readonly IImageCache _imageCache;
+
+        private readonly Dictionary<Border, ReactImageRequest> _imageRequests =
+            new Dictionary<Border, ReactImageRequest>();
 
         /// <summary>
         /// Instantiates the <see cref="ReactImageManager"/>.  
@@ -111,37 +115,8 @@ namespace ReactNative.Views.Image
         [ReactProp("src")]
         public void SetSource(Border view, string source)
         {
-            var imageBrush = (ImageBrush)view.Background;
-
-            view.GetReactContext()
-                .GetNativeModule<UIManagerModule>()
-                .EventDispatcher
-                .DispatchEvent(
-                    new ReactImageLoadEvent(
-                        view.GetTag(),
-                        ReactImageLoadEvent.OnLoadStart));
-
-            var reference = _imageCache.Get(source);
-            var subscription = reference.LoadedObservable.Subscribe(
-                _ =>
-                {
-                    imageBrush.ImageSource = reference.Image;
-                    OnImageOpened(view);
-                },
-                _ => OnImageFailed(view));
-
-            var disposable = default(SerialDisposable);
-            if (!_disposables.TryGetValue(view, out disposable))
-            {
-                disposable = new SerialDisposable();
-                _disposables.Add(view, disposable);
-            }
-
-            disposable.Disposable = new CompositeDisposable
-            {
-                reference,
-                subscription,
-            };
+            var imageRequest = _imageRequests[view];
+            imageRequest.Source = source;
         }
         
         /// <summary>
@@ -186,6 +161,72 @@ namespace ReactNative.Views.Image
             view.SetBorderWidth(ViewProps.BorderSpacingTypes[index], width);
         }
 
+        [ReactProp("headers")]
+        public void SetHeaders(Border view, JObject headers)
+        {
+            var imageRequest = _imageRequests[view];
+            if (headers == null)
+            {
+                imageRequest.Headers = null;
+            }
+            else
+            {
+                var headersDict = new Dictionary<string, string>();
+                foreach (var header in headers)
+                {
+                    headersDict.Add(header.Key, header.Value.Value<string>());
+                }
+                imageRequest.Headers = headersDict;
+            }
+        }
+
+        /// <summary>
+        /// Callback that will be triggered after all properties are updated in
+        /// the current update transation (all <see cref="Annotations.ReactPropAttribute"/> handlers
+        /// for properties updated in the current transaction have been called).
+        /// </summary>
+        /// <param name="view">The view.</param>
+        protected override void OnAfterUpdateTransaction(Border view)
+        {
+            var imageRequest = _imageRequests[view];
+            if (imageRequest.IsDirty)
+            {
+                imageRequest.IsDirty = false;
+
+                var imageBrush = (ImageBrush)view.Background;
+
+                view.GetReactContext()
+                    .GetNativeModule<UIManagerModule>()
+                    .EventDispatcher
+                    .DispatchEvent(
+                        new ReactImageLoadEvent(
+                            view.GetTag(),
+                            ReactImageLoadEvent.OnLoadStart));
+
+                var reference = _imageCache.Get(imageRequest);
+                var subscription = reference.LoadedObservable.Subscribe(
+                    _ =>
+                    {
+                        imageBrush.ImageSource = reference.Image;
+                        OnImageOpened(view);
+                    },
+                    _ => OnImageFailed(view));
+
+                var disposable = default(SerialDisposable);
+                if (!_disposables.TryGetValue(view, out disposable))
+                {
+                    disposable = new SerialDisposable();
+                    _disposables.Add(view, disposable);
+                }
+
+                disposable.Disposable = new CompositeDisposable
+                {
+                    reference,
+                    subscription,
+                };
+            }
+        }
+
         /// <summary>
         /// Called when view is detached from view hierarchy and allows for 
         /// additional cleanup.
@@ -195,6 +236,8 @@ namespace ReactNative.Views.Image
         public override void OnDropViewInstance(ThemedReactContext reactContext, Border view)
         {
             var imageBrush = (ImageBrush)view.Background;
+
+            _imageRequests.Remove(view);
 
             var disposable = default(SerialDisposable);
             if (_disposables.TryGetValue(view, out disposable))
@@ -211,10 +254,14 @@ namespace ReactNative.Views.Image
         /// <returns>The image view instance.</returns>
         protected override Border CreateViewInstance(ThemedReactContext reactContext)
         {
-            return new Border
+            var view = new Border
             {
                 Background = new ImageBrush(),
             };
+
+            _imageRequests.Add(view, new ReactImageRequest());
+
+            return view;
         }
 
         private void OnImageFailed(Border view)

@@ -11,5 +11,7 @@
         /// <param name="uri">The URI.</param>
         /// <returns>The image reference.</returns>
         IImageReference Get(string uri);
+
+        IImageReference Get(ReactImageRequest imageRequest);
     }
 }

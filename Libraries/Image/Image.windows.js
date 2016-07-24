@@ -75,6 +75,7 @@ var Image = React.createClass({
     source: PropTypes.oneOfType([
       PropTypes.shape({
         uri: PropTypes.string,
+        headers: PropTypes.number,
       }),
       // Opaque type returned by require('./image.jpg')
       PropTypes.number,
@@ -87,6 +88,7 @@ var Image = React.createClass({
     loadingIndicatorSource: PropTypes.oneOfType([
       PropTypes.shape({
         uri: PropTypes.string,
+        headers: PropTypes.objectOf(PropTypes.string),
       }),
       // Opaque type returned by require('./image.jpg')
       PropTypes.number,
@@ -199,6 +201,7 @@ var Image = React.createClass({
         style,
         shouldNotifyLoadEvents: !!(onLoadStart || onLoad || onLoadEnd),
         src: source.uri,
+        headers: source.headers,
         loadingIndicatorSrc: loadingIndicatorSource ? loadingIndicatorSource.uri : null,
       });
 
@@ -238,6 +241,7 @@ var styles = StyleSheet.create({
 var cfg = {
   nativeOnly: {
     src: true,
+    headers: true,
     loadingIndicatorSrc: true,
     defaultImageSrc: true,
     imageTag: true,
