@@ -21,7 +21,7 @@ var AccessibilityInfo = {
 
   fetch: function(): Promise<*> {
     return new Promise((resolve, reject) => {
-      reject('AccessibilityInfo is not supported on this platform.');
+      resolve(false);
     });
   },
 
@@ -29,14 +29,14 @@ var AccessibilityInfo = {
     eventName: ChangeEventName,
     handler: Function
   ): void {
-    warning(false, 'AccessibilityInfo is not supported on this platform.');
+    // warning(false, 'AccessibilityInfo is not supported on this platform.');
   },
 
   removeEventListener: function(
     eventName: ChangeEventName,
     handler: Function
   ): void {
-    warning(false, 'AccessibilityInfo is not supported on this platform.');
+    // warning(false, 'AccessibilityInfo is not supported on this platform.');
   },
 
 };
