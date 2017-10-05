@@ -48,6 +48,10 @@ namespace ReactNative.DevSupport
         private Action _dismissDevOptionsDialog;
         private bool _devOptionsDialogOpen;
 
+        private ProgressDialog _progressDialog = null;
+        private Action _progressDialogCancel = null;
+        private int _progressDialogCounter = 0;
+
         public DevSupportManager(
             IReactInstanceDevCommandsHandler reactInstanceCommandsHandler,
             string jsBundleFile,
@@ -357,10 +361,29 @@ namespace ReactNative.DevSupport
                 ? "Fetching JavaScript bundle."
                 : "Connecting to remote debugger.";
 
-            var progressDialog = new ProgressDialog("Please wait...", message);
+            if (_progressDialogCounter == 0)
+            {
+                _progressDialog = new ProgressDialog("Please wait...", message);
+                _progressDialogCancel = _progressDialog.ShowAsync().Cancel;
+                _progressDialogCounter = 1;
+            }
+            else
+            {
+                _progressDialogCounter++;
+            }
+
 #if WINDOWS_UWP
-            var dialogOperation = progressDialog.ShowAsync();
-            Action cancel = dialogOperation.Cancel;
+            var progressDialog = _progressDialog;
+            Action cancel = () =>
+            {
+                if (--_progressDialogCounter == 0)
+                {
+                    var cancel2 = _progressDialogCancel;
+                    _progressDialog = null;
+                    _progressDialogCancel = null;
+                    cancel2();
+                }
+            };
 #else
             if (Application.Current != null && Application.Current.MainWindow != null && Application.Current.MainWindow.IsLoaded)
             {
