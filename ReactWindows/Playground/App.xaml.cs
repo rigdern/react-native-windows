@@ -31,6 +31,7 @@ namespace Playground
         /// </summary>
         public App()
         {
+            Debug.WriteLine("UI App ctor");
             Microsoft.ApplicationInsights.WindowsAppInitializer.InitializeAsync(
                 Microsoft.ApplicationInsights.WindowsCollectors.Metadata |
                 Microsoft.ApplicationInsights.WindowsCollectors.Session);
@@ -39,6 +40,12 @@ namespace Playground
             this.Resuming += OnResuming;
             this.EnteredBackground += OnEnteredBackground;
             this.LeavingBackground += OnLeavingBackground;
+            UnhandledException += App_UnhandledException1;
+        }
+
+        private void App_UnhandledException1(object sender, UnhandledExceptionEventArgs e)
+        {
+            Debug.WriteLine($"UI CRASH: {e.Exception.Message}");
         }
 
         /// <summary>
@@ -163,7 +170,7 @@ namespace Playground
         /// <param name="e">Details about the suspend request.</param>
         private void OnSuspending(object sender, SuspendingEventArgs e)
         {
-            Debug.WriteLine($"[ReactNative] OnSuspend");
+            Debug.WriteLine($"UI [ReactNative] OnSuspend");
             _host.OnSuspend();
         }
 
@@ -174,6 +181,7 @@ namespace Playground
         /// <param name="e">Details about the resume request.</param>
         private void OnResuming(object sender, object e)
         {
+            Debug.WriteLine($"UI [ReactNative] OnResuming");
             _host.OnResume(Exit);
         }
 
@@ -184,6 +192,7 @@ namespace Playground
         /// <param name="e">Details about the entered background request.</param>
         private void OnEnteredBackground(object sender, EnteredBackgroundEventArgs e)
         {
+            Debug.WriteLine($"UI [ReactNative] OnEnteredBackground");
             _host.OnEnteredBackground();
         }
 
@@ -194,6 +203,7 @@ namespace Playground
         /// <param name="e">Details about the leaving background request.</param>
         private void OnLeavingBackground(object sender, LeavingBackgroundEventArgs e)
         {
+            Debug.WriteLine($"UI [ReactNative] OnLeavingBackground");
             _host.OnLeavingBackground();
         }
     }

@@ -128,6 +128,18 @@ namespace ReactNative.Bridge
             return taskCompletionSource.Task;
         }
 
+        public static void RunOnDispatcherIfNotOnDispatcher(DispatchedHandler action)
+        {
+            if (IsOnDispatcher())
+            {
+                action();
+            }
+            else
+            {
+                RunOnDispatcher(action);
+            }
+        }
+
         /// <summary>
         /// Cleans up the dispatcher helpers.
         /// </summary>

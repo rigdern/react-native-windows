@@ -501,7 +501,10 @@ namespace ReactNative
             try
             {
                 var reactContext = await CreateReactContextCoreAsync(jsExecutorFactory, jsBundleLoader, token);
-                SetupReactContext(reactContext);
+                DispatcherHelpers.RunOnDispatcherIfNotOnDispatcher(() =>
+                {
+                    SetupReactContext(reactContext);
+                });
                 return reactContext;
             }
             catch (OperationCanceledException)
